@@ -1,0 +1,97 @@
+---
+title: "lisahistograms"
+output: html_document
+---
+
+http://lisacharlotterost.github.io/2014/12/14/Styling-Choropleth-Maps%202/
+http://stackoverflow.com/questions/15016995/how-to-align-multiple-ggplot2-plots-and-add-shadows-over-all-of-them
+http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/
+
+```{r, echo=FALSE}
+require(RCurl)
+require(ggplot2)
+require(grid)
+require(gridExtra)
+require(maps)
+require(RColorBrewer)
+require(classInt) # Jenks natural breaks
+
+colors <- c("#FDC25A", "#FD7834", "#E9151C", "#891E14", "#45150C", "#000000") # copied from lisa's maps - not exactly but close to YlOrRd
+scale_fill_lisa <- scale_fill_manual(values=colors)
+
+states <- map_data("state")
+population<- read.csv(textConnection(getURL('https://www.census.gov/popest/data/national/totals/2014/files/NST_EST2014_ALLDATA.csv')))[-(1:5),]
+population$region = tolower(population$NAME)
+
+min = min(population$CENSUS2010POP)
+max = max(population$CENSUS2010POP)
+diff <- max - min
+std = sd(population$CENSUS2010POP)
+
+equal.interval = seq(min, max, by=diff/6)
+quantile.interval = quantile(population$CENSUS2010POP, probs=seq(0,1,by=1/6))
+std.interval = c(seq(min, max, by=std), max)
+pretty.interval = c(pretty(population$CENSUS2010PO))
+natural.interval = classIntervals(population$CENSUS2010PO, n=6, style='jenks')$brks
+
+population$population.equal = cut(population$CENSUS2010POP, breaks=equal.interval, include.lowest = TRUE)
+population$population.quantile = cut(population$CENSUS2010POP, breaks=quantile.interval, include.lowest = TRUE)
+population$population.std = cut(population$CENSUS2010POP, breaks=std.interval, include.lowest = TRUE)
+population$population.natural= cut(population$CENSUS2010POP, breaks=natural.interval, include.lowest = TRUE)
+
+choro <- merge(states, population, sort = FALSE, by = "region")
+choro <- choro[order(choro$order), ]
+
+common.scale_y = scale_y_continuous(limits=c(0,60))
+common.vline = geom_vline(aes(xintercept=CENSUS2010POP), color=colors[1], size=0.5)
+common.theme = theme(axis.line = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    plot.title=element_blank(),
+    axis.text.x=element_blank(),
+    axis.title.x=element_blank(),
+    axis.ticks.x=element_blank(),
+    axis.title.y=element_text(size=10, face='bold'),
+    axis.text.y=element_blank(),
+    axis.ticks.y=element_blank())
+top.graph = theme(plot.margin = unit(c(0,.5,-.5,.5), "line"))
+middle.graph = theme(plot.margin = unit(c(-.5,.5,-.5,.5), "line"))
+bottom.graph = theme(plot.margin = unit(c(-.5,.5,.5,.5), "line"))
+
+map.theme = common.theme + theme(axis.title.y=element_blank())
+
+interval_rug <- function(breaks) { return(geom_linerange(aes(x=CENSUS2010POP), ymin=-5, ymax=0, data=data.frame(CENSUS2010POP=breaks))) }
+
+hist.equal <- ggplot(population, aes(x=CENSUS2010POP)) + common.vline + geom_histogram(breaks=equal.interval, fill='black', color='black') + interval_rug(equal.interval) + common.scale_y + top.graph + common.theme + ylab("Equal Interval")
+hist.quantile <- ggplot(population, aes(x=CENSUS2010POP)) + common.vline + geom_histogram(breaks=quantile.interval, fill='black', color='black') + interval_rug(quantile.interval) + common.scale_y + middle.graph + common.theme + ylab("Quantile")
+hist.std <- ggplot(population, aes(x=CENSUS2010POP)) + common.vline + geom_histogram(breaks=std.interval, fill='black', color='black') + geom_line(y=0) + interval_rug(std.interval) + common.scale_y + middle.graph + common.theme + ylab("Std Deviation")
+hist.natural <- ggplot(population, aes(x=CENSUS2010POP)) + common.vline + geom_histogram(breaks=natural.interval, fill='black', color='black') + interval_rug(natural.interval) + common.scale_y + bottom.graph + common.theme + ylab("Natural breaks")
+
+map.equal <- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.equal), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
+map.quantile <- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.quantile), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
+map.std <- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.std), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
+map.natural <- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.natural), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
+
+hist.title <- ggplot(data.frame(minmax=c(min,max)), aes(x=minmax)) +
+  scale_y_continuous(limits=c(0,1)) +
+  geom_blank() +
+  geom_linerange(ymin=0, ymax=1, size=.5) +
+  geom_line(y=1, size=.5) +
+  common.theme +
+  theme(plot.margin = unit(c(.5,.5,0,.5), "line")) + ylab('') +
+  annotation_custom(grob=textGrob(label=paste(' ',format(min/1000000, digits=2),'m people'), just='left', gp=gpar(fontsize = 10, fontface='bold')), xmin=min, xmax=min) +
+  annotation_custom(grob=textGrob(label=paste(format(max/1000000, digits=2),'m people '), just='right', gp=gpar(fontsize = 10, fontface='bold')), xmin=max, xmax=max)
+hist.title
+```
+
+```{r, echo=FALSE, fig.width=10, fig.height=6}
+grid.arrange(hist.title, textGrob(label="Population in\nUS-american states", just='left', x= unit(0, "npc"), gp=gpar(fontsize = 10, fontface='bold')),
+             hist.equal, map.equal,
+             hist.quantile, map.quantile,
+             hist.std, map.std,
+             hist.natural, map.natural,
+             ncol=2, widths=c(4,1), heights=c(1.2,3,3,3,3))
+```
+
