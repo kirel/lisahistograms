@@ -93,8 +93,8 @@ population$population.equal = cut(population$CENSUS2010POP, breaks=equal.interva
 population$population.quantile = cut(population$CENSUS2010POP, breaks=quantile.interval, include.lowest = TRUE)
 population$population.std = cut(population$CENSUS2010POP, breaks=std.interval, include.lowest = TRUE)
 population$population.natural = cut(population$CENSUS2010POP, breaks=natural.interval, include.lowest = TRUE)</code></pre>
-<p>Now every state (represented as a row in the <code>population</code> data frame) has not only it’s population (in the <code>CENSUS2010POP</code> column) associated to it but also the information which bucket it belongs to for the different styles.</p>
-<pre class="r"><code>head(population[c('NAME', 'CENSUS2010POP', 'population.equal', 'population.quantile', 'population.natural')])</code></pre>
+<p>Now every state (represented as a row in the <code>population</code> data frame) had not only it’s population (in the <code>CENSUS2010POP</code> column) associated to it but also the information which bucket it belongs to for the different styles. Here are the relevant fields of the first few rows.</p>
+<pre class="r"><code>head(population[c('NAME', 'CENSUS2010POP', 'population.equal', 'population.quantile', 'population.std', 'population.natural')])</code></pre>
 <pre><code>##          NAME CENSUS2010POP    population.equal population.quantile
 ## 6     Alabama       4779736 [5.64e+05,6.68e+06] (4.09e+06,5.99e+06]
 ## 7      Alaska        710231 [5.64e+05,6.68e+06] [5.64e+05,1.18e+06]
@@ -102,13 +102,15 @@ population$population.natural = cut(population$CENSUS2010POP, breaks=natural.int
 ## 9    Arkansas       2915918 [5.64e+05,6.68e+06] (2.76e+06,4.09e+06]
 ## 10 California      37253956 (3.11e+07,3.73e+07] (9.61e+06,3.73e+07]
 ## 11   Colorado       5029196 [5.64e+05,6.68e+06] (4.09e+06,5.99e+06]
-##     population.natural
-## 6  (2.06e+06,4.78e+06]
-## 7  [5.64e+05,2.06e+06]
-## 8     (4.78e+06,8e+06]
-## 9  (2.06e+06,4.78e+06]
-## 10 (2.51e+07,3.73e+07]
-## 11    (4.78e+06,8e+06]</code></pre>
+##         population.std  population.natural
+## 6  [5.64e+05,7.33e+06] (2.06e+06,4.78e+06]
+## 7  [5.64e+05,7.33e+06] [5.64e+05,2.06e+06]
+## 8  [5.64e+05,7.33e+06]    (4.78e+06,8e+06]
+## 9  [5.64e+05,7.33e+06] (2.06e+06,4.78e+06]
+## 10 (3.44e+07,3.73e+07] (2.51e+07,3.73e+07]
+## 11 [5.64e+05,7.33e+06]    (4.78e+06,8e+06]</code></pre>
+<hr />
+<p>Fortunately the <code>states</code> data frame had a field called <code>region</code> that closely matched the <code>name</code> field of our <code>population</code> data frame. Thus by added another column with the right string transformation enabled me to <code>merge</code> (or you might be more familiar with the word <em>join</em> for this kind of operation) the two data frames so that I could later color the choropleth’s.</p>
 <pre class="r"><code>population$region = tolower(population$NAME)
 choro &lt;- merge(states, population, sort = FALSE, by = &quot;region&quot;)
 choro &lt;- choro[order(choro$order), ]</code></pre>

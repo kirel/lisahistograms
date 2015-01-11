@@ -54,11 +54,13 @@ population$population.std = cut(population$CENSUS2010POP, breaks=std.interval, i
 population$population.natural = cut(population$CENSUS2010POP, breaks=natural.interval, include.lowest = TRUE)
 ```
 
-Now every state (represented as a row in the `population` data frame) has not only it's population (in the `CENSUS2010POP` column) associated to it but also the information which bucket it belongs to for the different styles.
+Now every state (represented as a row in the `population` data frame) had not only it's population (in the `CENSUS2010POP` column) associated to it but also the information which bucket it belongs to for the different styles. Here are the relevant fields of the first few rows.
 
 ```{r}
 head(population[c('NAME', 'CENSUS2010POP', 'population.equal', 'population.quantile', 'population.std', 'population.natural')])
 ```
+
+Fortunately the `states` data frame had a field called `region` that closely matched the `name` field of our `population` data frame. Thus by added another column with the right string transformation enabled me to `merge` (or you might be more familiar with the word _join_ for this kind of operation) the two data frames so that I could later color the choropleth's.
 
 ```{r}
 population$region = tolower(population$NAME)
