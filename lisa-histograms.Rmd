@@ -1,46 +1,77 @@
 ---
-title: "lisahistograms"
+title: "[Styling Choropleth Maps](http://lisacharlotterost.github.io/2014/12/14/Styling-Choropleth-Maps%202/) recreated in R"
 output: html_document
+author: Daniel Kirsch
+date: January 11, 2015
 ---
 
-http://lisacharlotterost.github.io/2014/12/14/Styling-Choropleth-Maps%202/
-http://stackoverflow.com/questions/15016995/how-to-align-multiple-ggplot2-plots-and-add-shadows-over-all-of-them
-http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/
+A few days ago Bradley Boehmke [recreated a graphic](http://rpubs.com/bradleyboehmke/weather_graphic) from Edward Tufte's classic book Visual Display of Quantitative Information, 2nd Ed. (page 30). The implementation looked like a lot of yak shaving (especially for the annotations) but it's still (or because of that) a great piece.
 
-```{r, echo=FALSE}
+Then yesterday I stumbled over [Lisa Charlotte Rost](http://www.lisacharlotterost.de/)'s [blog](http://lisacharlotterost.github.io/) and really liked the article and the accompanying visualization about [Styling Choropleth Maps](http://lisacharlotterost.github.io/2014/12/14/Styling-Choropleth-Maps%202/). You should go read that article now if you are interested in mapping. I'll wait for you here... Welcome back! Where were we? So, I asked her how she created it and upon learning that the final graphic was put together in Illustrator I started wondering if this could be done with [R](http://www.r-project.org/) and [ggplot2](http://ggplot2.org/). Inspired by Bradley's post I went to work.
+
+_This is Lisa's original image:_
+![Lisa's original image](http://lisacharlotterost.github.io/pic/141214_categories.jpg)
+
+## Used packages
+
+```{r, message=FALSE, warning=FALSE}
 require(RCurl)
 require(ggplot2)
 require(grid)
 require(gridExtra)
 require(maps)
-require(RColorBrewer)
+require(RColorBrewer) # not really used - I thought i'd need it
 require(classInt) # Jenks natural breaks
+```
 
-colors <- c("#FDC25A", "#FD7834", "#E9151C", "#891E14", "#45150C", "#000000") # copied from lisa's maps - not exactly but close to YlOrRd
-scale_fill_lisa <- scale_fill_manual(values=colors)
+There are really no suprises here. I am using `RCurl` to download the data, `ggplot` and `maps` to draw histograms and... well... maps. There is only one package that I hadn't used before and that is `classInt`. QGIS' natural breaks coloring used an Algorithm by [George Jenks](http://en.wikipedia.org/wiki/Jenks_natural_breaks_optimization) which is to my good fortune implemented in that package. I was also thinking that I'd need `RColorBrewer` but Lisa seems to be using a sligtly treaked version of the [YlOrRd](http://colorbrewer2.org/) palette so I ended up just copying her colors into a manual color scale.
 
+## Preparing the data
+
+The first thing I did, was getting the state shapes from the `map` package and download the current [US census data](https://www.census.gov) from the web.
+
+```{r}
 states <- map_data("state")
 population<- read.csv(textConnection(getURL('https://www.census.gov/popest/data/national/totals/2014/files/NST_EST2014_ALLDATA.csv')))[-(1:5),]
-population$region = tolower(population$NAME)
+```
 
+Next I calculated some descriptive statistics to help me with the task of cutting the range of population sizes into the different intervals needed for the QGIS styling modes described in Lisa's article. I then computed the breaks of the intervals and the actual intervals.
+
+```{r}
 min = min(population$CENSUS2010POP)
 max = max(population$CENSUS2010POP)
 diff <- max - min
 std = sd(population$CENSUS2010POP)
 
-equal.interval = seq(min, max, by=diff/6)
-quantile.interval = quantile(population$CENSUS2010POP, probs=seq(0,1,by=1/6))
+equal.interval = seq(min, max, by = diff/6)
+quantile.interval = quantile(population$CENSUS2010POP, probs=seq(0, 1, by = 1/6))
 std.interval = c(seq(min, max, by=std), max)
-pretty.interval = c(pretty(population$CENSUS2010PO))
-natural.interval = classIntervals(population$CENSUS2010PO, n=6, style='jenks')$brks
+natural.interval = classIntervals(population$CENSUS2010PO, n = 6, style = 'jenks')$brks
 
 population$population.equal = cut(population$CENSUS2010POP, breaks=equal.interval, include.lowest = TRUE)
 population$population.quantile = cut(population$CENSUS2010POP, breaks=quantile.interval, include.lowest = TRUE)
 population$population.std = cut(population$CENSUS2010POP, breaks=std.interval, include.lowest = TRUE)
-population$population.natural= cut(population$CENSUS2010POP, breaks=natural.interval, include.lowest = TRUE)
+population$population.natural = cut(population$CENSUS2010POP, breaks=natural.interval, include.lowest = TRUE)
+```
 
+Now every state (represented as a row in the `population` data frame) has not only it's population (in the `CENSUS2010POP` column) associated to it but also the information which bucket it belongs to for the different styles.
+
+```{r}
+head(population[c('NAME', 'CENSUS2010POP', 'population.equal', 'population.quantile', 'population.std', 'population.natural')])
+```
+
+```{r}
+population$region = tolower(population$NAME)
 choro <- merge(states, population, sort = FALSE, by = "region")
 choro <- choro[order(choro$order), ]
+```
+
+## Creating the visualization
+
+```{r}
+
+colors <- c("#FDC25A", "#FD7834", "#E9151C", "#891E14", "#45150C", "#000000") # copied from lisa's maps - not exactly but close to YlOrRd
+scale_fill_lisa <- scale_fill_manual(values=colors)
 
 common.scale_y = scale_y_continuous(limits=c(0,60))
 common.vline = geom_vline(aes(xintercept=CENSUS2010POP), color=colors[1], size=0.5)
@@ -83,7 +114,6 @@ hist.title <- ggplot(data.frame(minmax=c(min,max)), aes(x=minmax)) +
   theme(plot.margin = unit(c(.5,.5,0,.5), "line")) + ylab('') +
   annotation_custom(grob=textGrob(label=paste(' ',format(min/1000000, digits=2),'m people'), just='left', gp=gpar(fontsize = 10, fontface='bold')), xmin=min, xmax=min) +
   annotation_custom(grob=textGrob(label=paste(format(max/1000000, digits=2),'m people '), just='right', gp=gpar(fontsize = 10, fontface='bold')), xmin=max, xmax=max)
-hist.title
 ```
 
 ```{r, echo=FALSE, fig.width=10, fig.height=6}
@@ -95,3 +125,11 @@ grid.arrange(hist.title, textGrob(label="Population in\nUS-american states", jus
              ncol=2, widths=c(4,1), heights=c(1.2,3,3,3,3))
 ```
 
+## Conclusion
+
+and immediately Bret Victor's [Drawing Dynamic Visualizations](https://vimeo.com/66085662) came to my mind. 
+
+## Links
+
+http://stackoverflow.com/questions/15016995/how-to-align-multiple-ggplot2-plots-and-add-shadows-over-all-of-them
+http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/
