@@ -108,12 +108,12 @@ hist <- function(interval, position, label) {
        position +
        common.theme +
        ylab(label)
-    )
+  )
 }
 
 hist.equal <- hist(equal.interval, top.graph, "Equal Interval")
 hist.quantile <- hist(quantile.interval, middle.graph, "Quantile")
-hist.std <- hist(std.interval, std.interval, "Std Deviation")
+hist.std <- hist(std.interval, middle.graph, "Std Deviation")
 hist.natural <- hist(natural.interval, bottom.graph, "Natural breaks")
 
 map.equal <- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.equal), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
