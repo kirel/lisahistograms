@@ -161,10 +161,16 @@ hist.quantile &lt;- hist(quantile.interval, middle.graph, &quot;Quantile&quot;)
 hist.std &lt;- hist(std.interval, middle.graph, &quot;Std Deviation&quot;)
 hist.natural &lt;- hist(natural.interval, bottom.graph, &quot;Natural breaks&quot;)
 
-map.equal &lt;- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.equal), color=&quot;white&quot;, size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
-map.quantile &lt;- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.quantile), color=&quot;white&quot;, size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
-map.std &lt;- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.std), color=&quot;white&quot;, size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
-map.natural &lt;- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.natural), color=&quot;white&quot;, size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
+map &lt;- function(cuts) {
+  return(
+    ggplot(choro) + geom_polygon(aes_string(y='lat',x='long',group='group',fill=cuts), color=&quot;white&quot;, size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
+    )
+}
+
+map.equal &lt;- map('population.equal')
+map.quantile &lt;- map('population.quantile')
+map.std &lt;- map('population.std')
+map.natural &lt;- map('population.natural')
 
 hist.title &lt;- ggplot(data.frame(minmax=c(min,max)), aes(x=minmax)) +
   scale_y_continuous(limits=c(0,1)) +
