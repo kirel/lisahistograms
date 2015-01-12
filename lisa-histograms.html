@@ -116,11 +116,8 @@ choro &lt;- choro[order(choro$order), ]</code></pre>
 </div>
 <div id="creating-the-visualization" class="section level2">
 <h2>Creating the visualization</h2>
-<pre class="r"><code>colors &lt;- c(&quot;#FDC25A&quot;, &quot;#FD7834&quot;, &quot;#E9151C&quot;, &quot;#891E14&quot;, &quot;#45150C&quot;, &quot;#000000&quot;) # copied from lisa's maps - not exactly but close to YlOrRd
-scale_fill_lisa &lt;- scale_fill_manual(values=colors)
-
-common.vline = geom_vline(aes(xintercept=CENSUS2010POP), color=colors[1], size=0.5)
-common.theme = theme(axis.line = element_blank(),
+<p>The next code snipped was actually created much later when tweaking the visuals. It creates a stripped down theme without borders, grid and axes so that I am able to match Lisa’s style.</p>
+<pre class="r"><code>common.theme = theme(axis.line = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     panel.border = element_blank(),
@@ -132,17 +129,24 @@ common.theme = theme(axis.line = element_blank(),
     axis.title.y=element_text(size=10, face='bold'),
     axis.text.y=element_blank(),
     axis.ticks.y=element_blank())
-top.graph = theme(plot.margin = unit(c(0,.5,-.5,.5), &quot;line&quot;))
+map.theme = common.theme + theme(axis.title.y=element_blank())</code></pre>
+<p>The color scheme was also created late in the process. Of course it needs to be declared before using it in the charts. Therefore it is here in the next code block. Lisa uses a color scale that matches the YlOrRd theme from Cynthia Brewer’s color scales very closely but it’s a little darker. Therefore I simply used a color picker and colied her colors as hex calues to create my own color scale.</p>
+<pre class="r"><code>colors &lt;- c(&quot;#FDC25A&quot;, &quot;#FD7834&quot;, &quot;#E9151C&quot;, &quot;#891E14&quot;, &quot;#45150C&quot;, &quot;#000000&quot;) # copied from lisa's maps - not exactly but close to YlOrRd
+scale_fill_lisa &lt;- scale_fill_manual(values=colors)
+qplot(color, fill=color, data=data.frame(color=colors)) + scale_fill_lisa + guides(fill=FALSE) + common.theme + ylab(NULL)</code></pre>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA8AAAADmCAYAAAAay+wtAAAD8GlDQ1BJQ0MgUHJvZmlsZQAAOI2NVd1v21QUP4lvXKQWP6Cxjg4Vi69VU1u5GxqtxgZJk6XpQhq5zdgqpMl1bhpT1za2021Vn/YCbwz4A4CyBx6QeEIaDMT2su0BtElTQRXVJKQ9dNpAaJP2gqpwrq9Tu13GuJGvfznndz7v0TVAx1ea45hJGWDe8l01n5GPn5iWO1YhCc9BJ/RAp6Z7TrpcLgIuxoVH1sNfIcHeNwfa6/9zdVappwMknkJsVz19HvFpgJSpO64PIN5G+fAp30Hc8TziHS4miFhheJbjLMMzHB8POFPqKGKWi6TXtSriJcT9MzH5bAzzHIK1I08t6hq6zHpRdu2aYdJYuk9Q/881bzZa8Xrx6fLmJo/iu4/VXnfH1BB/rmu5ScQvI77m+BkmfxXxvcZcJY14L0DymZp7pML5yTcW61PvIN6JuGr4halQvmjNlCa4bXJ5zj6qhpxrujeKPYMXEd+q00KR5yNAlWZzrF+Ie+uNsdC/MO4tTOZafhbroyXuR3Df08bLiHsQf+ja6gTPWVimZl7l/oUrjl8OcxDWLbNU5D6JRL2gxkDu16fGuC054OMhclsyXTOOFEL+kmMGs4i5kfNuQ62EnBuam8tzP+Q+tSqhz9SuqpZlvR1EfBiOJTSgYMMM7jpYsAEyqJCHDL4dcFFTAwNMlFDUUpQYiadhDmXteeWAw3HEmA2s15k1RmnP4RHuhBybdBOF7MfnICmSQ2SYjIBM3iRvkcMki9IRcnDTthyLz2Ld2fTzPjTQK+Mdg8y5nkZfFO+se9LQr3/09xZr+5GcaSufeAfAww60mAPx+q8u/bAr8rFCLrx7s+vqEkw8qb+p26n11Aruq6m1iJH6PbWGv1VIY25mkNE8PkaQhxfLIF7DZXx80HD/A3l2jLclYs061xNpWCfoB6WHJTjbH0mV35Q/lRXlC+W8cndbl9t2SfhU+Fb4UfhO+F74GWThknBZ+Em4InwjXIyd1ePnY/Psg3pb1TJNu15TMKWMtFt6ScpKL0ivSMXIn9QtDUlj0h7U7N48t3i8eC0GnMC91dX2sTivgloDTgUVeEGHLTizbf5Da9JLhkhh29QOs1luMcScmBXTIIt7xRFxSBxnuJWfuAd1I7jntkyd/pgKaIwVr3MgmDo2q8x6IdB5QH162mcX7ajtnHGN2bov71OU1+U0fqqoXLD0wX5ZM005UHmySz3qLtDqILDvIL+iH6jB9y2x83ok898GOPQX3lk3Itl0A+BrD6D7tUjWh3fis58BXDigN9yF8M5PJH4B8Gr79/F/XRm8m241mw/wvur4BGDj42bzn+Vmc+NL9L8GcMn8F1kAcXgSteGGAAATEklEQVR4Ae3aIY5eBRQFYP5JcUUABgNoNgA4kBQFpgooVMwSWARLGNGU4DA4apGEDaBBYQABDtKhqbvNtGfyUD33q3tz/0dyvvPMSThdPvr3gn8ECBAgQIAAAQIECBAgQKBc4Kw8n3gECBAgQIAAAQIECBAgQOCxgAHsQyBAgAABAgQIECBAgACBFQIG8IqahSRAgAABAgQIECBAgAABA9g3QIAAAQIECBAgQIAAAQIrBAzgFTULSYAAAQIECBAgQIAAAQIGsG+AAAECBAgQIECAAAECBFYIGMArahaSAAECBAgQIECAAAECBAxg3wABAgQIECBAgAABAgQIrBAwgFfULCQBAgQIECBAgAABAgQIGMC+AQIECBAgQIAAAQIECBBYIWAAr6hZSAIECBAgQIAAAQIECBAwgH0DBAgQIECAAAECBAgQILBCwABeUbOQBAgQIECAAAECBAgQIGAA+wYIECBAgAABAgQIECBAYIWAAbyiZiEJECBAgAABAgQIECBAwAD2DRAgQIAAAQIECBAgQIDACgEDeEXNQhIgQIAAAQIECBAgQICAAewbIECAAAECBAgQIECAAIEVAgbwipqFJECAAAECBAgQIECAAAED2DdAgAABAgQIECBAgAABAisEDOAVNQtJgAABAgQIECBAgAABAgawb4AAAQIECBAgQIAAAQIEVggYwCtqFpIAAQIECBAgQIAAAQIEDGDfAAECBAgQIECAAAECBAisEDCAV9QsJAECBAgQIECAAAECBAgYwL4BAgQIECBAgAABAgQIEFghYACvqFlIAgQIECBAgAABAgQIEDCAfQMECBAgQIAAAQIECBAgsELAAF5Rs5AECBAgQIAAAQIECBAgYAD7BggQIECAAAECBAgQIEBghYABvKJmIQkQIECAAAECBAgQIEDAAPYNECBAgAABAgQIECBAgMAKAQN4Rc1CEiBAgAABAgQIECBAgIAB7BsgQIAAAQIECBAgQIAAgRUCBvCKmoUkQIAAAQIECBAgQIAAAQPYN0CAAAECBAgQIECAAAECKwQM4BU1C0mAAAECBAgQIECAAAECBrBvgAABAgQIECBAgAABAgRWCBjAK2oWkgABAgQIECBAgAABAgQMYN8AAQIECBAgQIAAAQIECKwQMIBX1CwkAQIECBAgQIAAAQIECBjAvgECBAgQIECAAAECBAgQWCFgAK+oWUgCBAgQIECAAAECBAgQuLGJ4OGvDzbFlfUKgbM3bl3x1/ynhz98m3/kF7UCZ+/fPpTtr4tvDr3npR6Bl84/PRTmx6/vH3rPSx0C7975/FCQ7+7fO/Sel3oEPv787qEwFxcXh97zUofA+fl5R5BrpjhdPvp3zd8+9z/798GHz30GAf6fwI1b3x/6D/xz961D73mpQ+DFez8fCvLL6bVD73mpR+DNy98Ohfny1VcOveelDoGvfv/jUJC3X7556D0v9Qj89Offh8KcTqdD73mpQ2DRHHxcmP8FuuO7lYIAAQIECBAgQIAAAQIEgoABHICcCRAgQIAAAQIECBAgQKBDwADu6FEKAgQIECBAgAABAgQIEAgCBnAAciZAgAABAgQIECBAgACBDgEDuKNHKQgQIECAAAECBAgQIEAgCBjAAciZAAECBAgQIECAAAECBDoEDOCOHqUgQIAAAQIECBAgQIAAgSBgAAcgZwIECBAgQIAAAQIECBDoEDCAO3qUggABAgQIECBAgAABAgSCgAEcgJwJECBAgAABAgQIECBAoEPAAO7oUQoCBAgQIECAAAECBAgQCAIGcAByJkCAAAECBAgQIECAAIEOAQO4o0cpCBAgQIAAAQIECBAgQCAIGMAByJkAAQIECBAgQIAAAQIEOgQM4I4epSBAgAABAgQIECBAgACBIGAAByBnAgQIECBAgAABAgQIEOgQMIA7epSCAAECBAgQIECAAAECBIKAARyAnAkQIECAAAECBAgQIECgQ8AA7uhRCgIECBAgQIAAAQIECBAIAgZwAHImQIAAAQIECBAgQIAAgQ4BA7ijRykIECBAgAABAgQIECBAIAgYwAHImQABAgQIECBAgAABAgQ6BAzgjh6lIECAAAECBAgQIECAAIEgYAAHIGcCBAgQIECAAAECBAgQ6BAwgDt6lIIAAQIECBAgQIAAAQIEgoABHICcCRAgQIAAAQIECBAgQKBDwADu6FEKAgQIECBAgAABAgQIEAgCBnAAciZAgAABAgQIECBAgACBDgEDuKNHKQgQIECAAAECBAgQIEAgCBjAAciZAAECBAgQIECAAAECBDoEDOCOHqUgQIAAAQIECBAgQIAAgSBgAAcgZwIECBAgQIAAAQIECBDoEDCAO3qUggABAgQIECBAgAABAgSCgAEcgJwJECBAgAABAgQIECBAoEPAAO7oUQoCBAgQIECAAAECBAgQCAIGcAByJkCAAAECBAgQIECAAIEOAQO4o0cpCBAgQIAAAQIECBAgQCAIGMAByJkAAQIECBAgQIAAAQIEOgQM4I4epSBAgAABAgQIECBAgACBIGAAByBnAgQIECBAgAABAgQIEOgQMIA7epSCAAECBAgQIECAAAECBIKAARyAnAkQIECAAAECBAgQIECgQ8AA7uhRCgIECBAgQIAAAQIECBAIAgZwAHImQIAAAQIECBAgQIAAgQ4BA7ijRykIECBAgAABAgQIECBAIAgYwAHImQABAgQIECBAgAABAgQ6BAzgjh6lIECAAAECBAgQIECAAIEgYAAHIGcCBAgQIECAAAECBAgQ6BAwgDt6lIIAAQIECBAgQIAAAQIEgoABHICcCRAgQIAAAQIECBAgQKBDwADu6FEKAgQIECBAgAABAgQIEAgCBnAAciZAgAABAgQIECBAgACBDgEDuKNHKQgQIECAAAECBAgQIEAgCBjAAciZAAECBAgQIECAAAECBDoEDOCOHqUgQIAAAQIECBAgQIAAgSBgAAcgZwIECBAgQIAAAQIECBDoEDCAO3qUggABAgQIECBAgAABAgSCgAEcgJwJECBAgAABAgQIECBAoEPAAO7oUQoCBAgQIECAAAECBAgQCAIGcAByJkCAAAECBAgQIECAAIEOAQO4o0cpCBAgQIAAAQIECBAgQCAIGMAByJkAAQIECBAgQIAAAQIEOgQM4I4epSBAgAABAgQIECBAgACBIGAAByBnAgQIECBAgAABAgQIEOgQMIA7epSCAAECBAgQIECAAAECBIKAARyAnAkQIECAAAECBAgQIECgQ8AA7uhRCgIECBAgQIAAAQIECBAIAgZwAHImQIAAAQIECBAgQIAAgQ4BA7ijRykIECBAgAABAgQIECBAIAgYwAHImQABAgQIECBAgAABAgQ6BAzgjh6lIECAAAECBAgQIECAAIEgYAAHIGcCBAgQIECAAAECBAgQ6BAwgDt6lIIAAQIECBAgQIAAAQIEgoABHICcCRAgQIAAAQIECBAgQKBDwADu6FEKAgQIECBAgAABAgQIEAgCBnAAciZAgAABAgQIECBAgACBDgEDuKNHKQgQIECAAAECBAgQIEAgCBjAAciZAAECBAgQIECAAAECBDoEDOCOHqUgQIAAAQIECBAgQIAAgSBgAAcgZwIECBAgQIAAAQIECBDoEDCAO3qUggABAgQIECBAgAABAgSCgAEcgJwJECBAgAABAgQIECBAoEPAAO7oUQoCBAgQIECAAAECBAgQCAIGcAByJkCAAAECBAgQIECAAIEOAQO4o0cpCBAgQIAAAQIECBAgQCAIGMAByJkAAQIECBAgQIAAAQIEOgQM4I4epSBAgAABAgQIECBAgACBIGAAByBnAgQIECBAgAABAgQIEOgQMIA7epSCAAECBAgQIECAAAECBIKAARyAnAkQIECAAAECBAgQIECgQ8AA7uhRCgIECBAgQIAAAQIECBAIAgZwAHImQIAAAQIECBAgQIAAgQ4BA7ijRykIECBAgAABAgQIECBAIAgYwAHImQABAgQIECBAgAABAgQ6BAzgjh6lIECAAAECBAgQIECAAIEgYAAHIGcCBAgQIECAAAECBAgQ6BAwgDt6lIIAAQIECBAgQIAAAQIEgoABHICcCRAgQIAAAQIECBAgQKBDwADu6FEKAgQIECBAgAABAgQIEAgCBnAAciZAgAABAgQIECBAgACBDgEDuKNHKQgQIECAAAECBAgQIEAgCBjAAciZAAECBAgQIECAAAECBDoEDOCOHqUgQIAAAQIECBAgQIAAgSBgAAcgZwIECBAgQIAAAQIECBDoEDCAO3qUggABAgQIECBAgAABAgSCgAEcgJwJECBAgAABAgQIECBAoEPAAO7oUQoCBAgQIECAAAECBAgQCAIGcAByJkCAAAECBAgQIECAAIEOAQO4o0cpCBAgQIAAAQIECBAgQCAIGMAByJkAAQIECBAgQIAAAQIEOgQM4I4epSBAgAABAgQIECBAgACBIGAAByBnAgQIECBAgAABAgQIEOgQMIA7epSCAAECBAgQIECAAAECBIKAARyAnAkQIECAAAECBAgQIECgQ8AA7uhRCgIECBAgQIAAAQIECBAIAgZwAHImQIAAAQIECBAgQIAAgQ4BA7ijRykIECBAgAABAgQIECBAIAgYwAHImQABAgQIECBAgAABAgQ6BAzgjh6lIECAAAECBAgQIECAAIEgYAAHIGcCBAgQIECAAAECBAgQ6BC40RHjeilOr39wvR/6FYEnBM7eu/3EXzwSyAI3zz/JP/ILAlcIvPPZnSv+6k8Eni3w0Z0vnv0DVwJPETg/P3/KxZ8J9AmcLh/964slEQECBAgQIECAAAECBAgQmAL+F+jp4YkAAQIECBAgQIAAAQIESgUM4NJixSJAgAABAgQIECBAgACBKWAATw9PBAgQIECAAAECBAgQIFAqYACXFisWAQIECBAgQIAAAQIECEwBA3h6eCJAgAABAgQIECBAgACBUgEDuLRYsQgQIECAAAECBAgQIEBgChjA08MTAQIECBAgQIAAAQIECJQKGMClxYpFgAABAgQIECBAgAABAlPAAJ4enggQIECAAAECBAgQIECgVMAALi1WLAIECBAgQIAAAQIECBCYAgbw9PBEgAABAgQIECBAgAABAqUCBnBpsWIRIECAAAECBAgQIECAwBQwgKeHJwIECBAgQIAAAQIECBAoFTCAS4sViwABAgQIECBAgAABAgSmgAE8PTwRIECAAAECBAgQIECAQKmAAVxarFgECBAgQIAAAQIECBAgMAUM4OnhiQABAgQIECBAgAABAgRKBQzg0mLFIkCAAAECBAgQIECAAIEpYABPD08ECBAgQIAAAQIECBAgUCpgAJcWKxYBAgQIECBAgAABAgQITAEDeHp4IkCAAAECBAgQIECAAIFSAQO4tFixCBAgQIAAAQIECBAgQGAKGMDTwxMBAgQIECBAgAABAgQIlAoYwKXFikWAAAECBAgQIECAAAECU8AAnh6eCBAgQIAAAQIECBAgQKBUwAAuLVYsAgQIECBAgAABAgQIEJgCBvD08ESAAAECBAgQIECAAAECpQIGcGmxYhEgQIAAAQIECBAgQIDAFDCAp4cnAgQIECBAgAABAgQIECgVMIBLixWLAAECBAgQIECAAAECBKaAATw9PBEgQIAAAQIECBAgQIBAqYABXFqsWAQIECBAgAABAgQIECAwBQzg6eGJAAECBAgQIECAAAECBEoFDODSYsUiQIAAAQIECBAgQIAAgSlgAE8PTwQIECBAgAABAgQIECBQKmAAlxYrFgECBAgQIECAAAECBAhMAQN4engiQIAAAQIECBAgQIAAgVIBA7i0WLEIECBAgAABAgQIECBAYAoYwNPDEwECBAgQIECAAAECBAiUChjApcWKRYAAAQIECBAgQIAAAQJTwACeHp4IECBAgAABAgQIECBAoFTAAC4tViwCBAgQIECAAAECBAgQmAIG8PTwRIAAAQIECBAgQIAAAQKlAgZwabFiESBAgAABAgQIECBAgMAUMICnhycCBAgQIECAAAECBAgQKBUwgEuLFYsAAQIECBAgQIAAAQIEpoABPD08ESBAgAABAgQIECBAgECpgAFcWqxYBAgQIECAAAECBAgQIDAFDODp4YkAAQIECBAgQIAAAQIESgUM4NJixSJAgAABAgQIECBAgACBKWAATw9PBAgQIECAAAECBAgQIFAqYACXFisWAQIECBAgQIAAAQIECEwBA3h6eCJAgAABAgQIECBAgACBUgEDuLRYsQgQIECAAAECBAgQIEBgChjA08MTAQIECBAgQIAAAQIECJQKGMClxYpFgAABAgQIECBAgAABAlPAAJ4enggQIECAAAECBAgQIECgVMAALi1WLAIECBAgQIAAAQIECBCYAgbw9PBEgAABAgQIECBAgAABAqUCBnBpsWIRIECAAAECBAgQIECAwBQwgKeHJwIECBAgQIAAAQIECBAoFTCAS4sViwABAgQIECBAgAABAgSmwH8xIjbD4mHJkgAAAABJRU5ErkJggg==" title alt width="480" /></p>
+<p>To be able to join the different histograms with the vertical lines I had even more theming to do. Depending on where the graph is located I added a negative margin an the top, bottom or both.</p>
+<pre class="r"><code>top.graph = theme(plot.margin = unit(c(0,.5,-.5,.5), &quot;line&quot;))
 middle.graph = theme(plot.margin = unit(c(-.5,.5,-.5,.5), &quot;line&quot;))
-bottom.graph = theme(plot.margin = unit(c(-.5,.5,.5,.5), &quot;line&quot;))
+bottom.graph = theme(plot.margin = unit(c(-.5,.5,.5,.5), &quot;line&quot;))</code></pre>
+<p>To still get a reasonable amount of whitespace between the histograms I hardcoded the y-scale.</p>
+<pre class="r"><code>common.scale_y = scale_y_continuous(limits=c(0,60))</code></pre>
+<p>I created reusable fragments for the vertical lines indicating the states’ population data points and and the small black line segments at the bottom of each histogram.</p>
+<pre class="r"><code>common.vline = geom_vline(aes(xintercept=CENSUS2010POP), color=colors[1], size=0.5)
 
-map.theme = common.theme + theme(axis.title.y=element_blank())
-
-common.scale_y = scale_y_continuous(limits=c(0,60))
-
-interval_rug &lt;- function(breaks) { return(geom_linerange(aes(x=CENSUS2010POP), ymin=-5, ymax=0, data=data.frame(CENSUS2010POP=breaks))) }
-
-hist &lt;- function(interval, position, label) {
+interval_rug &lt;- function(breaks) { return(geom_linerange(aes(x=CENSUS2010POP), ymin=-5, ymax=0, data=data.frame(CENSUS2010POP=breaks))) }</code></pre>
+<p>Finally everything was coming together into the actual hitograms. To not repeat myself to much I refactored the code into a function that assembles the histograms from just a few parameters.</p>
+<pre class="r"><code>hist &lt;- function(interval, position, label) {
   return(
      ggplot(population, aes(x=CENSUS2010POP)) +
        common.vline +
@@ -159,20 +163,20 @@ hist &lt;- function(interval, position, label) {
 hist.equal &lt;- hist(equal.interval, top.graph, &quot;Equal Interval&quot;)
 hist.quantile &lt;- hist(quantile.interval, middle.graph, &quot;Quantile&quot;)
 hist.std &lt;- hist(std.interval, middle.graph, &quot;Std Deviation&quot;)
-hist.natural &lt;- hist(natural.interval, bottom.graph, &quot;Natural breaks&quot;)
-
-map &lt;- function(cuts) {
+hist.natural &lt;- hist(natural.interval, bottom.graph, &quot;Natural breaks&quot;)</code></pre>
+<p>I created a similar function for the maps. One new thing that I learned was <code>aes_string</code> – apparently you can’t put a variable into an <code>aes(fill=...)</code> call.</p>
+<pre class="r"><code>map &lt;- function(cuts) {
   return(
-    ggplot(choro) + geom_polygon(aes_string(y='lat',x='long',group='group',fill=cuts), color=&quot;white&quot;, size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
+    ggplot(choro) + geom_polygon(aes_string(y='lat', x='long', group='group', fill=cuts), color=&quot;white&quot;, size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
     )
 }
 
 map.equal &lt;- map('population.equal')
 map.quantile &lt;- map('population.quantile')
 map.std &lt;- map('population.std')
-map.natural &lt;- map('population.natural')
-
-hist.title &lt;- ggplot(data.frame(minmax=c(min,max)), aes(x=minmax)) +
+map.natural &lt;- map('population.natural')</code></pre>
+<p>By far the most ugly part of the whole endeavour was creating the header annotation in a way that looked reasonably similar to what Lisa had built. This reminded me about the feelings I had when reading Bradley Boehmke’s article and it brought Bret Victor’s <a href="https://vimeo.com/66085662">Drawing Dynamic Visualizations</a> to my mind. Manipulating symbols is just not a nice way to do (information) design work - especially with a slow feedback loop like this. In the end I got reasonably close the the original.</p>
+<pre class="r"><code>hist.title &lt;- ggplot(data.frame(minmax=c(min,max)), aes(x=minmax)) +
   scale_y_continuous(limits=c(0,1)) +
   geom_blank() +
   geom_linerange(ymin=0, ymax=1, size=.5) +
@@ -181,6 +185,8 @@ hist.title &lt;- ggplot(data.frame(minmax=c(min,max)), aes(x=minmax)) +
   theme(plot.margin = unit(c(.5,.5,0,.5), &quot;line&quot;)) + ylab('') +
   annotation_custom(grob=textGrob(label=paste(' ',format(min/1000000, digits=2),'m people'), just='left', gp=gpar(fontsize = 10, fontface='bold')), xmin=min, xmax=min) +
   annotation_custom(grob=textGrob(label=paste(format(max/1000000, digits=2),'m people '), just='right', gp=gpar(fontsize = 10, fontface='bold')), xmin=max, xmax=max)</code></pre>
+<p>Then I had to assemble everything into a single chart. This last snipped was also a piece of constant experimentation. Getting the width and height ratios right wasn’t exactly a fun exercise.</p>
+<p>This is my final result.</p>
 <pre><code>## Warning: position_stack requires constant width: output may be incorrect</code></pre>
 <pre><code>## Warning: position_stack requires constant width: output may be incorrect</code></pre>
 <pre><code>## Warning: position_stack requires constant width: output may be incorrect</code></pre>
@@ -188,11 +194,16 @@ hist.title &lt;- ggplot(data.frame(minmax=c(min,max)), aes(x=minmax)) +
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
-<p>and immediately Bret Victor’s <a href="https://vimeo.com/66085662">Drawing Dynamic Visualizations</a> came to my mind.</p>
+<p>I am quite happy with the result. I proved to myself that it is possible to recreate Lisa’s graphic in R. While this was a fun exercise it was also a confirmation for myself (which didn’t come unexpected) that R is not the tool to design graphics. It’s awesome to get results fast. Exploring datasets with <code>ggplot2</code> is a bliss. Tweaking the visuals however took longer than getting the basic graphics done. Maybe preparing a basic graph in R and exporting to SVG is a viable solution? I haven’t done much research yet.</p>
+<p>I hope you enjoyed the article and could learn a thing or two. Again a big shout out to <a href="http://www.lisacharlotterost.de/">Lisa</a> for creating the original graphic and to <a href="http://rpubs.com/bradleyboehmke/weather_graphic">Bradley</a> to inspire me to recreate it.</p>
+<div id="links" class="section level3">
+<h3>Links</h3>
+<p>The following sources proved very useful during creating this graphic.</p>
+<ul>
+<li><a href="http://stackoverflow.com/questions/15016995/how-to-align-multiple-ggplot2-plots-and-add-shadows-over-all-of-them">http://stackoverflow.com/questions/15016995/how-to-align-multiple-ggplot2-plots-and-add-shadows-over-all-of-them</a></li>
+<li><a href="http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/">http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/</a></li>
+</ul>
 </div>
-<div id="links" class="section level2">
-<h2>Links</h2>
-<p><a href="http://stackoverflow.com/questions/15016995/how-to-align-multiple-ggplot2-plots-and-add-shadows-over-all-of-them">http://stackoverflow.com/questions/15016995/how-to-align-multiple-ggplot2-plots-and-add-shadows-over-all-of-them</a> <a href="http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/">http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/</a></p>
 </div>
 
 

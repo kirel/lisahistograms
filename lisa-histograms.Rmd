@@ -70,11 +70,9 @@ choro <- choro[order(choro$order), ]
 
 ## Creating the visualization
 
-```{r}
-colors <- c("#FDC25A", "#FD7834", "#E9151C", "#891E14", "#45150C", "#000000") # copied from lisa's maps - not exactly but close to YlOrRd
-scale_fill_lisa <- scale_fill_manual(values=colors)
+The next code snipped was actually created much later when tweaking the visuals. It creates a stripped down theme without borders, grid and axes so that I am able to match Lisa's style.
 
-common.vline = geom_vline(aes(xintercept=CENSUS2010POP), color=colors[1], size=0.5)
+```{r}
 common.theme = theme(axis.line = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -87,16 +85,42 @@ common.theme = theme(axis.line = element_blank(),
     axis.title.y=element_text(size=10, face='bold'),
     axis.text.y=element_blank(),
     axis.ticks.y=element_blank())
+map.theme = common.theme + theme(axis.title.y=element_blank())
+```
+
+The color scheme was also created late in the process. Of course it needs to be declared before using it in the charts. Therefore it is here in the next code block. Lisa uses a color scale that matches the YlOrRd theme from Cynthia Brewer's color scales very closely but it's a little darker. Therefore I simply used a color picker and colied her colors as hex calues to create my own color scale.
+
+```{r, fig.width=5, fig.height=1.2}
+colors <- c("#FDC25A", "#FD7834", "#E9151C", "#891E14", "#45150C", "#000000") # copied from lisa's maps - not exactly but close to YlOrRd
+scale_fill_lisa <- scale_fill_manual(values=colors)
+qplot(color, fill=color, data=data.frame(color=colors)) + scale_fill_lisa + guides(fill=FALSE) + common.theme + ylab(NULL)
+```
+
+To be able to join the different histograms with the vertical lines I had even more theming to do. Depending on where the graph is located I added a negative margin an the top, bottom or both.
+
+```{r}
 top.graph = theme(plot.margin = unit(c(0,.5,-.5,.5), "line"))
 middle.graph = theme(plot.margin = unit(c(-.5,.5,-.5,.5), "line"))
 bottom.graph = theme(plot.margin = unit(c(-.5,.5,.5,.5), "line"))
+```
 
-map.theme = common.theme + theme(axis.title.y=element_blank())
+To still get a reasonable amount of whitespace between the histograms I hardcoded the y-scale.
 
+```{r}
 common.scale_y = scale_y_continuous(limits=c(0,60))
+```
+
+I created reusable fragments for the vertical lines indicating the states' population data points and and the small black line segments at the bottom of each histogram. 
+
+```{r}
+common.vline = geom_vline(aes(xintercept=CENSUS2010POP), color=colors[1], size=0.5)
 
 interval_rug <- function(breaks) { return(geom_linerange(aes(x=CENSUS2010POP), ymin=-5, ymax=0, data=data.frame(CENSUS2010POP=breaks))) }
+```
 
+Finally everything was coming together into the actual hitograms. To not repeat myself to much I refactored the code into a function that assembles the histograms from just a few parameters.
+
+```{r}
 hist <- function(interval, position, label) {
   return(
      ggplot(population, aes(x=CENSUS2010POP)) +
@@ -115,10 +139,15 @@ hist.equal <- hist(equal.interval, top.graph, "Equal Interval")
 hist.quantile <- hist(quantile.interval, middle.graph, "Quantile")
 hist.std <- hist(std.interval, middle.graph, "Std Deviation")
 hist.natural <- hist(natural.interval, bottom.graph, "Natural breaks")
+```
+
+I created a similar function for the maps. One new thing that I learned was `aes_string` -- apparently you can't put a variable into an `aes(fill=...)` call. 
+
+```{r}
 
 map <- function(cuts) {
   return(
-    ggplot(choro) + geom_polygon(aes_string(y='lat',x='long',group='group',fill=cuts), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
+    ggplot(choro) + geom_polygon(aes_string(y='lat', x='long', group='group', fill=cuts), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
     )
 }
 
@@ -126,7 +155,11 @@ map.equal <- map('population.equal')
 map.quantile <- map('population.quantile')
 map.std <- map('population.std')
 map.natural <- map('population.natural')
+```
 
+By far the most ugly part of the whole endeavour was creating the header annotation in a way that looked reasonably similar to what Lisa had built. This reminded me about the feelings I had when reading Bradley Boehmke's article and it brought Bret Victor's [Drawing Dynamic Visualizations](https://vimeo.com/66085662) to my mind. Manipulating symbols is just not a nice way to do (information) design work - especially with a slow feedback loop like this. In the end I got reasonably close the the original.
+
+```{r}
 hist.title <- ggplot(data.frame(minmax=c(min,max)), aes(x=minmax)) +
   scale_y_continuous(limits=c(0,1)) +
   geom_blank() +
@@ -137,6 +170,10 @@ hist.title <- ggplot(data.frame(minmax=c(min,max)), aes(x=minmax)) +
   annotation_custom(grob=textGrob(label=paste(' ',format(min/1000000, digits=2),'m people'), just='left', gp=gpar(fontsize = 10, fontface='bold')), xmin=min, xmax=min) +
   annotation_custom(grob=textGrob(label=paste(format(max/1000000, digits=2),'m people '), just='right', gp=gpar(fontsize = 10, fontface='bold')), xmin=max, xmax=max)
 ```
+
+Then I had to assemble everything into a single chart. This last snipped was also a piece of constant experimentation. Getting the width and height ratios right wasn't exactly a fun exercise.
+
+This is my final result.
 
 ```{r, echo=FALSE, fig.width=10, fig.height=6}
 grid.arrange(hist.title, textGrob(label="Population in\nUS-american states", just='left', x= unit(0, "npc"), gp=gpar(fontsize = 10, fontface='bold')),
@@ -149,9 +186,13 @@ grid.arrange(hist.title, textGrob(label="Population in\nUS-american states", jus
 
 ## Conclusion
 
-and immediately Bret Victor's [Drawing Dynamic Visualizations](https://vimeo.com/66085662) came to my mind. 
+I am quite happy with the result. I proved to myself that it is possible to recreate Lisa's graphic in R. While this was a fun exercise it was also a confirmation for myself (which didn't come unexpected) that R is not the tool to design graphics. It's awesome to get results fast. Exploring datasets with `ggplot2` is a bliss. Tweaking the visuals however took longer than getting the basic graphics done. Maybe preparing a basic graph in R and exporting to SVG is a viable solution? I haven't done much research yet.
 
-## Links
+I hope you enjoyed the article and could learn a thing or two. Again a big shout out to [Lisa](http://www.lisacharlotterost.de/) for creating the original graphic and to [Bradley](http://rpubs.com/bradleyboehmke/weather_graphic) to inspire me to recreate it.
 
-http://stackoverflow.com/questions/15016995/how-to-align-multiple-ggplot2-plots-and-add-shadows-over-all-of-them
-http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/
+### Links
+
+The following sources proved very useful during creating this graphic.
+
+- http://stackoverflow.com/questions/15016995/how-to-align-multiple-ggplot2-plots-and-add-shadows-over-all-of-them
+- http://www.cookbook-r.com/Graphs/Axes_(ggplot2)/
