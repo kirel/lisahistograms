@@ -97,10 +97,24 @@ common.scale_y = scale_y_continuous(limits=c(0,60))
 
 interval_rug <- function(breaks) { return(geom_linerange(aes(x=CENSUS2010POP), ymin=-5, ymax=0, data=data.frame(CENSUS2010POP=breaks))) }
 
-hist.equal <- ggplot(population, aes(x=CENSUS2010POP)) + common.vline + geom_histogram(breaks=equal.interval, fill='black', color='black') + interval_rug(equal.interval) + common.scale_y + top.graph + common.theme + ylab("Equal Interval")
-hist.quantile <- ggplot(population, aes(x=CENSUS2010POP)) + common.vline + geom_histogram(breaks=quantile.interval, fill='black', color='black') + interval_rug(quantile.interval) + common.scale_y + middle.graph + common.theme + ylab("Quantile")
-hist.std <- ggplot(population, aes(x=CENSUS2010POP)) + common.vline + geom_histogram(breaks=std.interval, fill='black', color='black') + geom_line(y=0) + interval_rug(std.interval) + common.scale_y + middle.graph + common.theme + ylab("Std Deviation")
-hist.natural <- ggplot(population, aes(x=CENSUS2010POP)) + common.vline + geom_histogram(breaks=natural.interval, fill='black', color='black') + interval_rug(natural.interval) + common.scale_y + bottom.graph + common.theme + ylab("Natural breaks")
+hist <- function(interval, position, label) {
+  return(
+     ggplot(population, aes(x=CENSUS2010POP)) +
+       common.vline +
+       geom_histogram(breaks=interval, fill='black', color='black') +
+       geom_line(y=0) + # faux x-axis
+       interval_rug(interval) +
+       common.scale_y +
+       position +
+       common.theme +
+       ylab(label)
+    )
+}
+
+hist.equal <- hist(equal.interval, top.graph, "Equal Interval")
+hist.quantile <- hist(quantile.interval, middle.graph, "Quantile")
+hist.std <- hist(std.interval, std.interval, "Std Deviation")
+hist.natural <- hist(natural.interval, bottom.graph, "Natural breaks")
 
 map.equal <- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.equal), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
 map.quantile <- ggplot(choro) + geom_polygon(aes(x=long, y=lat, group = group, fill = population.quantile), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
