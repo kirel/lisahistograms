@@ -175,7 +175,7 @@ Then I had to assemble everything into a single chart. This last snipped was als
 
 This is my final result.
 
-```{r, echo=FALSE, fig.width=10, fig.height=6}
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.height=6}
 grid.arrange(hist.title, textGrob(label="Population in\nUS-american states", just='left', x= unit(0, "npc"), gp=gpar(fontsize = 10, fontface='bold')),
              hist.equal, map.equal,
              hist.quantile, map.quantile,
