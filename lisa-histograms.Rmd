@@ -35,7 +35,7 @@ states <- map_data("state")
 population<- read.csv(textConnection(getURL('https://www.census.gov/popest/data/national/totals/2014/files/NST_EST2014_ALLDATA.csv')))[-(1:5),]
 ```
 
-Next I calculated some descriptive statistics to help me with the task of cutting the range of population sizes into the different intervals needed for the QGIS styling modes described in Lisa's article. I then computed the breaks of the intervals and the actual intervals.
+Next I calculated some descriptive statistics to help me with the task of cutting the range of population sizes into the different intervals needed for the QGIS styling modes described in Lisa's article. I then computed the breaks of the intervals and added the information to which interval each state belongs to the `population` data frame via the very useful `cut` method.
 
 ```{r}
 min = min(population$CENSUS2010POP)
@@ -60,7 +60,7 @@ Now every state (represented as a row in the `population` data frame) had not on
 head(population[c('NAME', 'CENSUS2010POP', 'population.equal', 'population.quantile', 'population.std', 'population.natural')])
 ```
 
-Fortunately the `states` data frame had a field called `region` that closely matched the `name` field of our `population` data frame. Thus by added another column with the right string transformation enabled me to `merge` (or you might be more familiar with the word _join_ for this kind of operation) the two data frames so that I could later color the choropleth's.
+Fortunately the `states` data frame had a field called `region` that closely matched the `name` field of our `population` data frame - just one of them was all lower case. Thus by adding another column using the right string transformation enabled me to `merge` (or you might be more familiar with the word _join_ for this kind of operation) the two data frames. This gave me one big data frame with all the information I needed to create the histograms on the left of Lisa's graphic and also the maps.
 
 ```{r}
 population$region = tolower(population$NAME)
@@ -71,11 +71,9 @@ choro <- choro[order(choro$order), ]
 ## Creating the visualization
 
 ```{r}
-
 colors <- c("#FDC25A", "#FD7834", "#E9151C", "#891E14", "#45150C", "#000000") # copied from lisa's maps - not exactly but close to YlOrRd
 scale_fill_lisa <- scale_fill_manual(values=colors)
 
-common.scale_y = scale_y_continuous(limits=c(0,60))
 common.vline = geom_vline(aes(xintercept=CENSUS2010POP), color=colors[1], size=0.5)
 common.theme = theme(axis.line = element_blank(),
     panel.grid.major = element_blank(),
@@ -94,6 +92,8 @@ middle.graph = theme(plot.margin = unit(c(-.5,.5,-.5,.5), "line"))
 bottom.graph = theme(plot.margin = unit(c(-.5,.5,.5,.5), "line"))
 
 map.theme = common.theme + theme(axis.title.y=element_blank())
+
+common.scale_y = scale_y_continuous(limits=c(0,60))
 
 interval_rug <- function(breaks) { return(geom_linerange(aes(x=CENSUS2010POP), ymin=-5, ymax=0, data=data.frame(CENSUS2010POP=breaks))) }
 

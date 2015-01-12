@@ -78,7 +78,7 @@ require(classInt) # Jenks natural breaks</code></pre>
 <p>The first thing I did, was getting the state shapes from the <code>map</code> package and download the current <a href="https://www.census.gov">US census data</a> from the web.</p>
 <pre class="r"><code>states &lt;- map_data(&quot;state&quot;)
 population&lt;- read.csv(textConnection(getURL('https://www.census.gov/popest/data/national/totals/2014/files/NST_EST2014_ALLDATA.csv')))[-(1:5),]</code></pre>
-<p>Next I calculated some descriptive statistics to help me with the task of cutting the range of population sizes into the different intervals needed for the QGIS styling modes described in Lisa’s article. I then computed the breaks of the intervals and the actual intervals.</p>
+<p>Next I calculated some descriptive statistics to help me with the task of cutting the range of population sizes into the different intervals needed for the QGIS styling modes described in Lisa’s article. I then computed the breaks of the intervals and added the information to which interval each state belongs to the <code>population</code> data frame via the very useful <code>cut</code> method.</p>
 <pre class="r"><code>min = min(population$CENSUS2010POP)
 max = max(population$CENSUS2010POP)
 diff &lt;- max - min
@@ -109,8 +109,7 @@ population$population.natural = cut(population$CENSUS2010POP, breaks=natural.int
 ## 9  [5.64e+05,7.33e+06] (2.06e+06,4.78e+06]
 ## 10 (3.44e+07,3.73e+07] (2.51e+07,3.73e+07]
 ## 11 [5.64e+05,7.33e+06]    (4.78e+06,8e+06]</code></pre>
-<hr />
-<p>Fortunately the <code>states</code> data frame had a field called <code>region</code> that closely matched the <code>name</code> field of our <code>population</code> data frame. Thus by added another column with the right string transformation enabled me to <code>merge</code> (or you might be more familiar with the word <em>join</em> for this kind of operation) the two data frames so that I could later color the choropleth’s.</p>
+<p>Fortunately the <code>states</code> data frame had a field called <code>region</code> that closely matched the <code>name</code> field of our <code>population</code> data frame - just one of them was all lower case. Thus by adding another column using the right string transformation enabled me to <code>merge</code> (or you might be more familiar with the word <em>join</em> for this kind of operation) the two data frames. This gave me one big data frame with all the information I needed to create the histograms on the left of Lisa’s graphic and also the maps.</p>
 <pre class="r"><code>population$region = tolower(population$NAME)
 choro &lt;- merge(states, population, sort = FALSE, by = &quot;region&quot;)
 choro &lt;- choro[order(choro$order), ]</code></pre>
@@ -120,7 +119,6 @@ choro &lt;- choro[order(choro$order), ]</code></pre>
 <pre class="r"><code>colors &lt;- c(&quot;#FDC25A&quot;, &quot;#FD7834&quot;, &quot;#E9151C&quot;, &quot;#891E14&quot;, &quot;#45150C&quot;, &quot;#000000&quot;) # copied from lisa's maps - not exactly but close to YlOrRd
 scale_fill_lisa &lt;- scale_fill_manual(values=colors)
 
-common.scale_y = scale_y_continuous(limits=c(0,60))
 common.vline = geom_vline(aes(xintercept=CENSUS2010POP), color=colors[1], size=0.5)
 common.theme = theme(axis.line = element_blank(),
     panel.grid.major = element_blank(),
@@ -139,6 +137,8 @@ middle.graph = theme(plot.margin = unit(c(-.5,.5,-.5,.5), &quot;line&quot;))
 bottom.graph = theme(plot.margin = unit(c(-.5,.5,.5,.5), &quot;line&quot;))
 
 map.theme = common.theme + theme(axis.title.y=element_blank())
+
+common.scale_y = scale_y_continuous(limits=c(0,60))
 
 interval_rug &lt;- function(breaks) { return(geom_linerange(aes(x=CENSUS2010POP), ymin=-5, ymax=0, data=data.frame(CENSUS2010POP=breaks))) }
 
