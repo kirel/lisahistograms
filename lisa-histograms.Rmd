@@ -5,14 +5,14 @@ author: Daniel Kirsch
 date: January 11, 2015
 ---
 
-A few days ago Bradley Boehmke [recreated a graphic](http://rpubs.com/bradleyboehmke/weather_graphic) from Edward Tufte's classic book Visual Display of Quantitative Information, 2nd Ed. (page 30). The implementation looked like a lot of yak shaving (especially for the annotations) but it's still (or because of that) a great piece.
+A few days ago Bradley Boehmke [recreated a graphic](http://rpubs.com/bradleyboehmke/weather_graphic) from Edward Tufte's classic book Visual Display of Quantitative Information, 2nd Ed. (page 30). The implementation looked like a lot of yak shaving (especially for the annotations) but it's still (or precisely because of that) a great piece.
 
 Then yesterday I stumbled over [Lisa Charlotte Rost](http://www.lisacharlotterost.de/)'s [blog](http://lisacharlotterost.github.io/) and really liked the article and the accompanying visualization about [Styling Choropleth Maps](http://lisacharlotterost.github.io/2014/12/14/Styling-Choropleth-Maps%202/). You should go read that article now if you are interested in mapping. I'll wait for you here... Welcome back! Where were we? So, I asked her how she created it and upon learning that the final graphic was put together in Illustrator I started wondering if this could be done with [R](http://www.r-project.org/) and [ggplot2](http://ggplot2.org/). Inspired by Bradley's post I went to work.
 
 _This is Lisa's original image:_
 ![Lisa's original image](http://lisacharlotterost.github.io/pic/141214_categories.jpg)
 
-## Used packages
+## R packages
 
 ```{r, message=FALSE, warning=FALSE}
 require(RCurl)
@@ -20,11 +20,11 @@ require(ggplot2)
 require(grid)
 require(gridExtra)
 require(maps)
-require(RColorBrewer) # not really used - I thought i'd need it
+# require(RColorBrewer) # not really used - I thought i'd need it
 require(classInt) # Jenks natural breaks
 ```
 
-There are really no suprises here. I am using `RCurl` to download the data, `ggplot` and `maps` to draw histograms and... well... maps. There is only one package that I hadn't used before and that is `classInt`. QGIS' natural breaks coloring used an Algorithm by [George Jenks](http://en.wikipedia.org/wiki/Jenks_natural_breaks_optimization) which is to my good fortune implemented in that package. I was also thinking that I'd need `RColorBrewer` but Lisa seems to be using a sligtly treaked version of the [YlOrRd](http://colorbrewer2.org/) palette so I ended up just copying her colors into a manual color scale.
+There are really no suprises here. I am using `RCurl` to download the data, `ggplot` and `maps` to draw histograms and... well... maps. There is only one package that I hadn't used before and that is `classInt`. QGIS' natural breaks coloring uses an algorithm by [George Jenks](http://en.wikipedia.org/wiki/Jenks_natural_breaks_optimization) which is to my good fortune implemented in that package. I was also thinking that I'd need `RColorBrewer` but Lisa seems to be using a sligtly treaked version of the [YlOrRd](http://colorbrewer2.org/) palette so I ended up just copying her colors into a manual color scale.
 
 ## Preparing the data
 
@@ -70,7 +70,35 @@ choro <- choro[order(choro$order), ]
 
 ## Creating the visualization
 
-The next code snipped was actually created much later when tweaking the visuals. It creates a stripped down theme without borders, grid and axes so that I am able to match Lisa's style.
+Now that the data was available it was pretty easy to get started with the vizualization. `ggplot2` is just awesome to get going fast. The next graph shows a plot of the population distribution:
+
+```{r, message=FALSE}
+ggplot(population, aes(x=CENSUS2010POP)) + geom_histogram()
+```
+
+It was easy to use one of the interval lists for the QGIS styles as breaks for the histogram with only minor modifications:
+
+```{r, warning=FALSE}
+ggplot(population, aes(x=CENSUS2010POP)) + geom_histogram(breaks=natural.interval, stat='bin')
+```
+
+And now I had to add the vertical lines indicating the data points:
+
+```{r, warning=FALSE}
+ggplot(population, aes(x=CENSUS2010POP)) + geom_vline(aes(xintercept=CENSUS2010POP), color='red') + geom_histogram(breaks=natural.interval)
+```
+
+The map was equally easy to generate in it's basic form:
+
+```{r}
+ggplot(choro) + geom_polygon(aes(x=long, y=lat, group=group, fill=population.natural))
+```
+
+Now all I had to do was to combine all the bits and pieces into a unit and tweak the look until I was happy. I should have expected it: This was actually the most tedious part. Therefore I'll guide you through my final solution now instead of taking you on the journey of my struggles.
+
+### Final solution
+
+The next snipped was actually one of the last bit of code that I wrote. It creates a stripped down theme without borders, grid and axes so that I am able to match Lisa's style.
 
 ```{r}
 common.theme = theme(axis.line = element_blank(),
@@ -88,7 +116,7 @@ common.theme = theme(axis.line = element_blank(),
 map.theme = common.theme + theme(axis.title.y=element_blank())
 ```
 
-The color scheme was also created late in the process. Of course it needs to be declared before using it in the charts. Therefore it is here in the next code block. Lisa uses a color scale that matches the YlOrRd theme from Cynthia Brewer's color scales very closely but it's a little darker. Therefore I simply used a color picker and colied her colors as hex calues to create my own color scale.
+The color scheme was also created rather late in the process. Lisa uses a color scale that matches the [YlOrRd](http://colorbrewer2.org/) theme from Cynthia Brewer's color scales very closely but it's a little darker. Therefore I simply used a color picker ad copied her colors as hex calues to create my own color scale.
 
 ```{r, fig.width=5, fig.height=1.2}
 colors <- c("#FDC25A", "#FD7834", "#E9151C", "#891E14", "#45150C", "#000000") # copied from lisa's maps - not exactly but close to YlOrRd
@@ -96,7 +124,7 @@ scale_fill_lisa <- scale_fill_manual(values=colors)
 qplot(color, fill=color, data=data.frame(color=colors)) + scale_fill_lisa + guides(fill=FALSE) + common.theme + ylab(NULL)
 ```
 
-To be able to join the different histograms with the vertical lines I had even more theming to do. Depending on where the graph is located I added a negative margin an the top, bottom or both.
+To be able to join the different histograms in a way that the vertical lines look like the cover the whole graphic I had even more theming to do. Depending on where the graph was located in the layout I added a negative margin an the top, bottom or both.
 
 ```{r}
 top.graph = theme(plot.margin = unit(c(0,.5,-.5,.5), "line"))
@@ -118,7 +146,7 @@ common.vline = geom_vline(aes(xintercept=CENSUS2010POP), color=colors[1], size=0
 interval_rug <- function(breaks) { return(geom_linerange(aes(x=CENSUS2010POP), ymin=-5, ymax=0, data=data.frame(CENSUS2010POP=breaks))) }
 ```
 
-Finally everything was coming together into the actual hitograms. To not repeat myself to much I refactored the code into a function that assembles the histograms from just a few parameters.
+Finally everything was coming together into the actual hitograms. To not repeat myself too much I refactored the code into a function that assembles the histograms from just a few parameters.
 
 ```{r}
 hist <- function(interval, position, label) {
@@ -138,10 +166,10 @@ hist <- function(interval, position, label) {
 hist.equal <- hist(equal.interval, top.graph, "Equal Interval")
 hist.quantile <- hist(quantile.interval, middle.graph, "Quantile")
 hist.std <- hist(std.interval, middle.graph, "Std Deviation")
-hist.natural <- hist(natural.interval, bottom.graph, "Natural breaks")
+hist.natural <- hist(natural.interval, bottom.graph, "Natural Breaks")
 ```
 
-I created a similar function for the maps. One new thing that I learned was `aes_string` -- apparently you can't put a variable into an `aes(fill=...)` call. 
+I created a similar function for the maps. One new thing that I learned here was `aes_string` -- apparently you can't put a variable into an `aes(fill=...)` call. 
 
 ```{r}
 
@@ -186,9 +214,15 @@ grid.arrange(hist.title, textGrob(label="Population in\nUS-american states", jus
 
 ## Conclusion
 
-I am quite happy with the result. I proved to myself that it is possible to recreate Lisa's graphic in R. While this was a fun exercise it was also a confirmation for myself (which didn't come unexpected) that R is not the tool to design graphics. It's awesome to get results fast. Exploring datasets with `ggplot2` is a bliss. Tweaking the visuals however took longer than getting the basic graphics done. Maybe preparing a basic graph in R and exporting to SVG is a viable solution? I haven't done much research yet.
+I am quite happy with the result. I proved to myself that it is possible to recreate Lisa's graphic in R. While this was a fun exercise it was also a confirmation for myself (which didn't come unexpected) that R is not the tool to _design_ graphics. It's awesome to get results fast. Exploring datasets with `ggplot2` is a bliss. Tweaking the visuals however took longer than getting the basic graphics done. Maybe preparing a basic graph in R and exporting to SVG is a viable solution? I haven't done much research yet.
 
 I hope you enjoyed the article and could learn a thing or two. Again a big shout out to [Lisa](http://www.lisacharlotterost.de/) for creating the original graphic and to [Bradley](http://rpubs.com/bradleyboehmke/weather_graphic) to inspire me to recreate it.
+
+---
+
+<small><aside><i>
+__Caveat:__ You might have noticed that our histograms are looking a little confusing. That is because they don't have a constant bin width and don't make up for that in adapting the bar height. That means that not the area but only the bar height indicates how many data points are in a bucket. I think the graphic still succeeds making it's point.
+</i></aside></small>
 
 ### Links
 
