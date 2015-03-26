@@ -5,6 +5,10 @@ author: Daniel Kirsch
 date: January 11, 2015
 ---
 
+<small><aside><i>
+__Update January 14, 2015:__ As requested by [Ari Friedman](https://twitter.com/aribfriedman/status/555167149392932864) I am now projecting my maps. Thanks for the hint.
+</i></aside></small>
+
 A few days ago Bradley Boehmke [recreated a graphic](http://rpubs.com/bradleyboehmke/weather_graphic) from Edward Tufte's classic book Visual Display of Quantitative Information, 2nd Ed. (page 30). The implementation looked like a lot of yak shaving (especially for the annotations) but it's still (or precisely because of that) a great piece.
 
 Then yesterday I stumbled over [Lisa Charlotte Rost](http://www.lisacharlotterost.de/)'s [blog](http://lisacharlotterost.github.io/) and really liked the article and the accompanying visualization about [Styling Choropleth Maps](http://lisacharlotterost.github.io/2014/12/14/Styling-Choropleth-Maps%202/). You should go read that article now if you are interested in mapping. I'll wait for you here... Welcome back! Where were we? So, I asked her how she created it and upon learning that the final graphic was put together in Illustrator I started wondering if this could be done with [R](http://www.r-project.org/) and [ggplot2](http://ggplot2.org/). Inspired by Bradley's post I went to work.
@@ -20,6 +24,7 @@ require(ggplot2)
 require(grid)
 require(gridExtra)
 require(maps)
+require(mapproj)
 # require(RColorBrewer) # not really used - I thought i'd need it
 require(classInt) # Jenks natural breaks
 ```
@@ -91,7 +96,7 @@ ggplot(population, aes(x=CENSUS2010POP)) + geom_vline(aes(xintercept=CENSUS2010P
 The map was equally easy to generate in it's basic form:
 
 ```{r}
-ggplot(choro) + geom_polygon(aes(x=long, y=lat, group=group, fill=population.natural))
+ggplot(choro) + geom_polygon(aes(x=long, y=lat, group=group, fill=population.natural)) + coord_map()
 ```
 
 Now all I had to do was to combine all the bits and pieces into a unit and tweak the look until I was happy. I should have expected it: This was actually the most tedious part. Therefore I'll guide you through my final solution now instead of taking you on the journey of my struggles.
@@ -175,7 +180,7 @@ I created a similar function for the maps. One new thing that I learned here was
 
 map <- function(cuts) {
   return(
-    ggplot(choro) + geom_polygon(aes_string(y='lat', x='long', group='group', fill=cuts), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme
+    ggplot(choro) + geom_polygon(aes_string(y='lat', x='long', group='group', fill=cuts), color="white", size=.2) + scale_fill_lisa + guides(fill=FALSE) + map.theme + coord_map()
     )
 }
 
